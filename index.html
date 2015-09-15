@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Basic Chat</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+    <script>
+        var connection = new WebSocket("ws://127.0.0.1:8001");
+        var FriendList = [];
+        var friend, user;
+        $(document).ready(function(){
+            $('#msg').keypress(function(event){
+                var keycode = (event.keyCode ? event.keyCode : event.which);
+                if(keycode == '13'){
+                    if(friend == undefined){
+                        alert("Choose a friend by clicking a username !");
+                    }
+                    else{
+                        var msg = document.getElementById("msg");
+                        connection.send(JSON.stringify({from:user,to:friend,msg:msg.value}));
+                        var chat = $('#ChatArea').html();
+                        $('#ChatArea').empty();
+                        $('#ChatArea').append('<p class="text-right">'+'To : <strong>'+friend+'</strong>  <br> '+msg.value+'  </p>');
+                        $('#ChatArea').append('<hr style="width: 100%; color: black; height: 1px; background-color:black;" />');
+                        $('#ChatArea').append(chat);
+                        msg.value = "";
+                    }
+                }
+            });
+            connection.onmessage = function(event2){
+                console.log(event2.data);
+                var event = JSON.parse(event2.data);
+                if(event.list!=undefined){
+                    FriendList = event.list.slice(0);
+                    $('#Friends').empty();
+                    for (var i = 0; i < FriendList.length; i++) { 
+                        if(FriendList[i]!=user)$('#Friends').append('<a href="#" onclick="setFriend('+i+');" class="list-group-item">'+FriendList[i]+'</a>');
+                    }
+                }
+                else{
+                    var chat = $('#ChatArea').html();
+                    $('#ChatArea').empty();
+                    $('#ChatArea').append('<p class="text-left">'+' From :<strong> '+event.from+'</strong>  <br>'+event.msg+'  </p>');
+                    $('#ChatArea').append('<hr style="width: 100%; color: black; height: 1px; background-color:black;" />');
+                    $('#ChatArea').append(chat);
+                } 
+            }
+            connection.onclose = function(event){
+                alert("Connection lost with Server...refresh and start from beginning!");
+            };
+            connection.onerror = function(event){
+                alert("Connection lost with Server...refresh and start from beginning!");
+            };
+            $('#Friends').on('click',function(e){
+                var previous = $(this).closest(".list-group").children(".active");
+                previous.removeClass('active');
+                $(e.target).addClass('active');
+            });
+        });
+        function setFriend(i){
+            friend = FriendList[i];
+        }
+        function onload() { 
+            user = prompt("Choose a Username");
+            console.log(user);
+            $('#heading').text("Hi,"+user+" ..Talk with strangers!");
+            connection.send(JSON.stringify({myname:user}));
+        }
+    </script>
+</head>
+<body onload="onload();">
+    <div class="container">
+        <div class="row">
+            <h1 id="heading" class="text-center">Talk with strangers!</h1>
+            <div class="col-md-3 ">
+                <div class="panel panel-default" style="height: 500px; overflow-y: scroll;">
+                        <div class="panel-heading">
+                            <h3 class="panel-title">Users Online</h3>
+                        </div>
+                    <div class="panel-body">
+                        <div id="Friends" class="list-group"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="input-group">
+                  <span class="input-group-addon" id="basic-addon1">@</span>
+                  <input id="msg" type="text" class="form-control" placeholder="Type your Message here..." aria-describedby="basic-addon1">
+                </div>
+                <div class="panel panel-default" style="height: 500px; overflow-y: scroll;">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Messages</h3>
+                    </div>
+                    <div id="ChatArea" class="panel-body"></div>
+                </div>
+            </div>
+        </div>
+        <hr style="margin-bottom:5px !important; margin-top:5px !important; " />
+        <hr style="margin-bottom:5px !important; margin-top:5px !important; " />
+        <footer class="footer">
+            <div class="container">
+                <p class="text-muted">&copy; Ashutosh Prakash, prakash.ashutosh12 [AT] gmail.com</p>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
